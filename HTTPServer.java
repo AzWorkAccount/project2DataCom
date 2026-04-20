@@ -38,7 +38,27 @@ public class HTTPServer {
                 String body = new String(Files.readAllBytes(file.toPath()), ENCODING);
 
                 System.out.println(body);
-				// to read a file and convert it into a string 
+				// to read a file and convert it into a string
+
+                // read in HTTP request
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(dataInputStream));
+
+                String line = bufferedReader.readLine();
+                while(!line.isEmpty()){
+                    System.out.println(line);
+                    line = bufferedReader.readLine();
+                }
+
+                // Generate HTTP response message
+                String response = "Hello World HTTP";
+                PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
+                printWriter.print("HTTP/1.1 200 OK" + CRLF);
+                printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
+                printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
+                printWriter.print(response);
+                printWriter.flush();
+
+                socket.close();
 
             }
 
