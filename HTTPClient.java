@@ -21,7 +21,6 @@ public class HTTPClient {
 
         System.out.println("client is requesting ... ");
         try {
-
             System.out.print("File name: ");
             Scanner input = new Scanner(System.in);
 
