@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
 public class HTTPServer {
@@ -30,16 +31,6 @@ public class HTTPServer {
                 DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
 
-                // Hint: use
-                File file = new File("index.html");
-
-
-
-                String body = new String(Files.readAllBytes(file.toPath()), ENCODING);
-
-                System.out.println(body);
-				// to read a file and convert it into a string
-
                 // read in HTTP request
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(dataInputStream));
 
@@ -49,16 +40,37 @@ public class HTTPServer {
                     line = bufferedReader.readLine();
                 }
 
-                // Generate HTTP response message
-                String response = "Hello World HTTP";
-                PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
-                printWriter.print("HTTP/1.1 200 OK" + CRLF);
-                printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
-                printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
-                printWriter.print(response);
-                printWriter.flush();
+                line = bufferedReader.readLine();
+                System.out.println("server_folder/" + line);
+                String fileName = "server_folder/" + line;
 
-                socket.close();
+                try {
+                    // Hint: use
+                    File file = new File(fileName);
+
+                    String body = new String(Files.readAllBytes(file.toPath()), ENCODING);
+                    System.out.println(body);
+                    // to read a file and convert it into a string
+
+                    // Generate HTTP response message
+                    String response = "Hello World HTTP";
+                    PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
+                    printWriter.print("HTTP/1.1 200 OK" + CRLF);
+                    printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
+                    printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
+                    printWriter.print(response);
+                    printWriter.flush();
+
+                    socket.close();
+                } catch (NoSuchFileException e){
+                    String response = "The file does not exist";
+                    PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
+                    printWriter.print("Error: HTTP/1.1 404 Not Found" + CRLF);
+                    printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
+                    printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
+                    printWriter.print(response);
+                    printWriter.flush();
+                }
 
             }
 

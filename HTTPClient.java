@@ -4,11 +4,12 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 
 public class HTTPClient {
 
     public static final int PORT = 80;
-    public static final String SERVER_ADDR = "127.0.0.1" ; // "www.google.com";
+    public static final String SERVER_ADDR = "127.0.0.1"; //"www.google.com";
     public static final String CRLF = "\r\n";
     public static final String EOH = CRLF + CRLF;
 	public static final Charset ENCODING = StandardCharsets.ISO_8859_1; // encoding to use for reading/writing data
@@ -20,6 +21,12 @@ public class HTTPClient {
 
         System.out.println("client is requesting ... ");
         try {
+
+            System.out.print("File name: ");
+            Scanner input = new Scanner(System.in);
+
+            String fileName = input.nextLine();
+
             Socket socket = new Socket(SERVER_ADDR, PORT);
             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
@@ -28,11 +35,12 @@ public class HTTPClient {
 			// use while((N_bytes = reader.read(buffer, 0, CHUNK_SIZE)) != -1 ){}
 
             // Generate HTTP request message
-            PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
+            PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, ENCODING));
             printWriter.print("GET / HTTP/1.1" + CRLF);
             printWriter.print("Host: " + SERVER_ADDR + CRLF);
             printWriter.print("Connection: close" + CRLF); //close the file after recieving data
             printWriter.print("Accept: */*" + EOH);
+            printWriter.print(fileName + CRLF);
             printWriter.flush();
 
             // read in HTTP request
