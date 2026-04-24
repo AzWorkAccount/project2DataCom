@@ -35,30 +35,41 @@ public class HTTPServer {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(dataInputStream));
 
                 String line = bufferedReader.readLine();
+                String fileName = "server_folder/index.html";
                 while(!line.isEmpty()){
                     System.out.println(line);
-                    line = bufferedReader.readLine();
-                }
 
-                line = bufferedReader.readLine();
-                System.out.println("server_folder/" + line);
-                String fileName = "server_folder/" + line;
+                    if(line.startsWith("GET")) {
+                        String[] split = line.split(" ");
+                        System.out.println("HERE");
+
+                        if(split[1].equals("/")){
+                            fileName = "server_folder/index.html";
+                        } else {
+                            fileName = "server_folder" + split[1];
+                        }
+                    }
+                    line = bufferedReader.readLine();
+
+
+                }
+                System.out.println("Filename: " + fileName);
+
 
                 try {
                     // Hint: use
                     File file = new File(fileName);
 
                     String body = new String(Files.readAllBytes(file.toPath()), ENCODING);
-                    System.out.println(body);
+                    //System.out.println(body);
                     // to read a file and convert it into a string
 
                     // Generate HTTP response message
-                    String response = "Hello World HTTP";
                     PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
                     printWriter.print("HTTP/1.1 200 OK" + CRLF);
                     printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
-                    printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
-                    printWriter.print(response);
+                    printWriter.print("Content-Length: " + body.length() + EOH); //close the file after recieving data
+                    printWriter.print(body);
                     printWriter.flush();
 
                     socket.close();
