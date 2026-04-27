@@ -50,43 +50,63 @@ public class HTTPClient {
 //            printWriter.print(fileName + CRLF);
             printWriter.flush();
 
-            // read in HTTP request
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(dataInputStream));
+            // read response headers and body using raw bytes to preserve binary data
+            InputStream inputStream = socket.getInputStream();
+            BufferedInputStream bis = new BufferedInputStream(inputStream);
 
-            int length = 100;
-
-            String line = bufferedReader.readLine();
-            boolean errorFlag = false;
-
-            while(!line.isEmpty()){
-                if(line.contains("Error")){
-                    errorFlag = true;
-                }
-                System.out.println(line);
-                line = bufferedReader.readLine();
-
-                if(line.contains("Content-Length:")){
-                    String[] split = line.split(": ");
-                    length = Integer.parseInt(split[1]);
+            // read headers until CRLFCRLF
+            ByteArrayOutputStream headerBaos = new ByteArrayOutputStream();
+            int b;
+            while ((b = bis.read()) != -1) {
+                headerBaos.write(b);
+                byte[] tmp = headerBaos.toByteArray();
+                int len = tmp.length;
+                if (len >= 4 && tmp[len-4] == 13 && tmp[len-3] == 10 && tmp[len-2] == 13 && tmp[len-1] == 10) {
+                    break;
                 }
             }
 
-            char[] buffer = new char[length];
-            //while((bufferedReader.read(buffer, 0, CHUNK_SIZE)) != -1 ){}
+            String headerStr = new String(headerBaos.toByteArray(), ENCODING);
+            String[] headerLines = headerStr.split(CRLF);
+            boolean errorFlag = false;
+            int length = -1;
+            for (String hl : headerLines) {
+                if (hl.isEmpty()) continue;
+                System.out.println(hl);
+                if (hl.contains("Error")) errorFlag = true;
+                if (hl.toLowerCase().startsWith("content-length:")) {
+                    String[] split = hl.split(":");
+                    length = Integer.parseInt(split[1].trim());
+                }
+            }
 
-            if(!errorFlag) { // if there is no error write to file
-                bufferedReader.read(buffer);
-                if(fileName.contains("/")){
+            byte[] bodyBytes = new byte[0];
+            if (!errorFlag) {
+                if (length >= 0) {
+                    bodyBytes = new byte[length];
+                    int read = 0;
+                    while (read < length) {
+                        int r = bis.read(bodyBytes, read, length - read);
+                        if (r == -1) break;
+                        read += r;
+                    }
+                } else {
+                    ByteArrayOutputStream bodyBaos = new ByteArrayOutputStream();
+                    byte[] buf = new byte[CHUNK_SIZE];
+                    int r;
+                    while ((r = bis.read(buf)) != -1) {
+                        bodyBaos.write(buf, 0, r);
+                    }
+                    bodyBytes = bodyBaos.toByteArray();
+                }
+
+                if (fileName.contains("/")){
                     String[] hold = fileName.split("/");
                     fileName = hold[hold.length -1];
                 }
                 String newFile = ("client_folder\\" + fileName);
-                String fi = new String(buffer);
-                byte[] completeFile = fi.getBytes();
-
-                Files.write(Paths.get(newFile), completeFile);
+                Files.write(Paths.get(newFile), bodyBytes);
             }
-
 
             printWriter.close();
             socket.close();

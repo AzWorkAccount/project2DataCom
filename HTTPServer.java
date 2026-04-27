@@ -17,7 +17,7 @@ public class HTTPServer {
     public static final String EOH = CRLF + CRLF;
 	public static final Charset ENCODING = StandardCharsets.ISO_8859_1; // encoding to use for reading/writing
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException {
 
         System.out.println("server is listening to port 80");
         try {
@@ -57,34 +57,35 @@ public class HTTPServer {
 
 
                 try {
-                    // Hint: use
                     File file = new File(fileName);
+                    byte[] bodyBytes = Files.readAllBytes(file.toPath());
 
-                    String body = new String(Files.readAllBytes(file.toPath()), ENCODING);
-                    //System.out.println(body);
-                    // to read a file and convert it into a string
+                    String contentType = "application/octet-stream";
+                    String lower = fileName.toLowerCase();
+                    if (lower.endsWith(".html") || lower.endsWith(".htm")) contentType = "text/html; charset=ISO-8859-1";
+                    else if (lower.endsWith(".png")) contentType = "image/png";
+                    else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) contentType = "image/jpeg";
 
-                    // Generate HTTP response message
-                    PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
-                    printWriter.print("HTTP/1.1 200 OK" + CRLF);
-                    printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
-                    printWriter.print("Content-Length: " + body.length() + EOH); //close the file after recieving data
-                    printWriter.print(body);
-                    printWriter.flush();
+                    dataOutputStream.writeBytes("HTTP/1.1 200 OK" + CRLF);
+                    dataOutputStream.writeBytes("Content-Type: " + contentType + CRLF);
+                    dataOutputStream.writeBytes("Content-Length: " + bodyBytes.length + EOH);
+                    dataOutputStream.write(bodyBytes);
+                    dataOutputStream.flush();
 
                     socket.close();
                 } catch (NoSuchFileException e){
                     String response = "The file does not exist";
-                    PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
-                    printWriter.print("Error: HTTP/1.1 404 Not Found" + CRLF);
-                    printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
-                    printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
-                    printWriter.print(response);
-                    printWriter.flush();
+                    dataOutputStream.writeBytes("HTTP/1.1 404 Not Found" + CRLF);
+                    dataOutputStream.writeBytes("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
+                    dataOutputStream.writeBytes("Content-Length: " + response.getBytes(StandardCharsets.ISO_8859_1).length + EOH);
+                    dataOutputStream.write(response.getBytes(StandardCharsets.ISO_8859_1));
+                    dataOutputStream.flush();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
                 }
-
-            }
-
+                PrintWriter printWriter = getPrintWriter(dataOutputStream);
+                printWriter.flush();
+                }
         }catch (UnknownHostException e){
             e.printStackTrace();
         }catch (IOException e){
@@ -96,8 +97,15 @@ public class HTTPServer {
 
     }
 
-
-
+    private static PrintWriter getPrintWriter(DataOutputStream dataOutputStream) {
+        String response = "The file does not exist";
+        PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
+        printWriter.print("Error: HTTP/1.1 404 Not Found" + CRLF);
+        printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
+        printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
+        printWriter.print(response);
+        return printWriter;
+    }
 
 
 }
