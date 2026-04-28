@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 
 public class HTTPServer {
 
@@ -75,11 +76,13 @@ public class HTTPServer {
                     socket.close();
                 } catch (NoSuchFileException e){
                     String response = "The file does not exist";
-                    dataOutputStream.writeBytes("HTTP/1.1 404 Not Found" + CRLF);
-                    dataOutputStream.writeBytes("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
-                    dataOutputStream.writeBytes("Content-Length: " + response.getBytes(StandardCharsets.ISO_8859_1).length + EOH);
-                    dataOutputStream.write(response.getBytes(StandardCharsets.ISO_8859_1));
-                    dataOutputStream.flush();
+                    LocalDateTime TIMEnow = LocalDateTime.now(); // Get current date and time
+                    PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
+                    printWriter.print("Error: HTTP/1.1 404 Not Found" + CRLF);
+                    printWriter.print("Date: " + TIMEnow  + CRLF);
+                    printWriter.print("Server: project2DataComServer" + CRLF);
+                    printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
+                    printWriter.print(response);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -99,9 +102,11 @@ public class HTTPServer {
 
     private static PrintWriter getPrintWriter(DataOutputStream dataOutputStream) {
         String response = "The file does not exist";
+        LocalDateTime TIMEnow = LocalDateTime.now(); // Get current date and time
         PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(dataOutputStream, StandardCharsets.ISO_8859_1));
         printWriter.print("Error: HTTP/1.1 404 Not Found" + CRLF);
-        printWriter.print("Content-Type: text/html; charset=ISO-8859-1" + CRLF);
+        printWriter.print("Date: " + TIMEnow + CRLF);
+        printWriter.print("Server: project2DataComServer" + CRLF);
         printWriter.print("Content-Length: " + response.length() + EOH); //close the file after recieving data
         printWriter.print(response);
         return printWriter;
